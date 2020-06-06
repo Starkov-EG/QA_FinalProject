@@ -1,0 +1,46 @@
+properties([disableConcurrentBuilds()])
+
+pipeline {
+    agent { 
+        label 'master'
+        }
+    options {
+        buildDiscarder(logRotator(numToKeepStr: '10', artifactNumToKeepStr: '10'))
+        timestamps()
+    }
+    stages {
+        stage("Docker") {
+            steps {
+                echo " ============== start building image ================="
+                sh "docker build -t my_tests ."
+
+                echo " ============== run docker contaner ================="
+                sh "docker run --name my_run my_tests"
+
+                echo " ============== copy allure report ================="
+                sh "docker cp my_run:/app/allure-results ."
+            }
+        }
+              
+        stage("system prune") {
+            steps {
+                echo " ============== start system prune ================="
+                sh "docker system prune -f"
+            }
+        }
+        stage('reports') {
+            steps {
+                echo " ============== allure ================="
+                script {
+                    allure([
+                        includeProperties: false,
+                        jdk: '',
+                        properties: [],
+                        reportBuildPolicy: 'ALWAYS',
+                        results: [[path: './allure-report']]
+                    ])
+                }
+            }
+        }
+    }
+}
