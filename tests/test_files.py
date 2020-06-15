@@ -19,7 +19,10 @@ def test1_upload_file(dropbox_client_content):
 
 @allure.title("Скачивание файла")
 def test_download(dropbox_client_content):
-    download_path = './Downloads/'+dropbox_client_content.file.split("/")[2]
+    download_folder = "./Downloads/"
+    if not os.path.isdir(download_folder):
+        os.mkdir(download_folder)
+    download_path = download_folder+dropbox_client_content.file.split("/")[2]
     headers = {'Content-Type': 'application/octet-stream',
                'Dropbox-API-Arg': '{"path": "' + dropbox_client_content.file + '"}'}
     answ = dropbox_client_content.post(path_type="download", add_headers=headers)
